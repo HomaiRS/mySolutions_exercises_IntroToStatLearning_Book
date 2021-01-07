@@ -1,0 +1,236 @@
+---
+title: "IDS 575, HW5"
+author: "CV,HR,AD,MT"
+date: "April 27, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+##HW5P1
+##Problem 1(Chapter 9, p7) [2pt]
+
+##(a)
+```{r}
+library(ISLR)
+View(Auto)
+gasMedian <- median(Auto$mpg)
+fivenum(Auto$mpg)
+
+Auto$gasCat[Auto$mpg > gasMedian]<-"1"
+Auto$gasCat[Auto$mpg < gasMedian]<-"0"
+Auto$gasCat <- as.factor(Auto$gasCat)
+
+```
+
+##(b)
+```{r}
+library(e1071)
+
+set.seed(123)
+fitSVM <- tune(svm, gasCat ~ ., data = Auto, kernel = "linear", ranges = list(cost = c(0.01, 0.1, 0.5, 1, 5, 10, 25, 50, 100)))
+# summary(fitSVM)                                                                                    
+```
+##Error is lowest when cost = 1.
+
+##(c)
+```{r}
+fitSVMPoly <- tune(svm, gasCat ~ ., data = Auto, kernel = "polynomial", ranges = list(cost = c(0.01, 0.1, 0.5, 1, 5, 10, 25, 50, 100), degree = c(2, 3, 4)))
+# summary(fitSVMPoly)
+```
+##Error is lowest at cost = 100 and degrees = 2.
+```{r}
+fitSVMRad <- tune(svm, gasCat ~ ., data = Auto, kernel = "radial", ranges = list(cost = c(0.01, 0.1, 0.5, 1, 5, 10, 25, 50, 100), gamma = c(0.01, 0.1, 0.5, 1, 5, 10, 25, 50, 100)))
+# summary(fitSVMRad)
+```
+##Error is lowest at cost = 50 and gamma = 0.01.
+
+##(d)
+##cScores <- c(0.01, 0.1, 0.5, 1, 5, 10, 25, 50, 100)
+For a linear kernel, a cost of 1 seems to perform best. For a polynomial kernel, the lowest cross-validation error is obtained for a degree of 2 and a cost of 100. For a radial kernel, the lowest cross-validation error is obtained for a gamma of 0.01 and a cost of 100.
+```{r}
+plot(fitSVM, data = Auto, formula = gasCat ~ cylinders, fill = TRUE, grid = 50, slice = list(mpg = 0, cylinders = 1))
+plot(fitSVM, data = Auto, formula = gasCat ~ displacement, fill = TRUE, grid = 50, slice = list(mpg = 0, displacement = 1))
+
+plot(fitSVMPoly, data = Auto, formula = gasCat ~ cylinders, fill = TRUE, grid = 50, slice = list(mpg = 0, cylinders = 1))
+plot(fitSVMPoly, data = Auto, formula = gasCat ~ displacement, fill = TRUE, grid = 50, slice = list(mpg = 0, displacement = 1))
+
+plot(fitSVMRad, data = Auto, formula = gasCat ~ cylinders, fill = TRUE, grid = 50, slice = list(mpg = 0, cylinders = 1))
+plot(fitSVMRad, data = Auto, formula = gasCat ~ displacement, fill = TRUE, grid = 50, slice = list(mpg = 0, displacement = 1))
+```
+In order to see the SVM performance better, the following plots are proposed. Each plot shows a SVM classifier fitted to every feature(column) of "Auto" dataset. Labels "0,1" are shown by Aqua and pink respectively. "o" shows the correctly classified data, and "x" shows misclassifieds.
+
+```{r}
+fitSVM <- svm(gasCat ~ ., data = Auto, kernel = "linear", cost = 1)
+fitSVMPoly <- svm(gasCat ~ ., data = Auto, kernel = "polynomial", cost = 100, degree = 2)
+fitSVMRad <- svm(gasCat ~ ., data = Auto, kernel = "radial", cost = 100, gamma = 0.01)
+plotpairs = function(fit) {
+  for (name in names(Auto)[!(names(Auto) %in% c("mpg", "gasCat", "name"))]) {
+    plot(fit, Auto, as.formula(paste("mpg~", name, sep = "")))
+  }
+}
+graphics.off()
+plotpairs(fitSVMPoly)
+```
+We can see the SVM performance using polynomial kernel as follows.
+```{r}
+plotpairs(fitSVMPoly)
+```
+The SVM performance using radial kernel is also as follows.
+```{r}
+plotpairs(fitSVMRad)
+```
+
+## Problem 2 (Chapter 10, p3)
+
+In this problem, you will perform K-means clustering manually, with K = 2, on a small example with n= 6 observations and p = 2 features. The observations are as follows.
+
+*(a) & (b) Plot observations and randomly assign a cluster label to each observation. You can use the sample() command in R to do this. Report the cluster labels for each observation.*
+
+```{r p1}
+x1 <- c(1,1,0,5,6,4)
+x2 <- c(4,3,4,1,2,0)
+plot(x1, x2, xlim = c(0, 6), ylim = c(0, 6), pch=19)
+``` 
+
+This code was used to create the random cluster assignments: *labels <- sample(2,6,replace=T)*
+
+```{r p2}
+labels <- c(2,2,1,1,1,2)
+plot(x1, x2, col=labels,xlim = c(0, 6), ylim = c(0, 6), pch=19)
+```
+
+Observations were plotted, and randomly assigned to a cluster shown by the color. Points 1,2 & 6 were assigned to the red cluster, and points 3-5 were assigned to the blue cluster.
+
+*(c) Compute the centroid for each cluster.*
+```{r p3}
+centroid_blue = c(mean(x1[labels==1]), mean(x2[labels==1]))
+centroid_red = c(mean(x1[labels==2]), mean(x2[labels==2]))
+
+plot(x1, x2, col=labels,xlim = c(0, 6), ylim = c(0, 6), pch=19)
+points(centroid_blue[1],centroid_blue[2],col=1)
+points(centroid_red[1],centroid_red[2],col=2)
+```
+
+The centroid for the blue cluster is at the point (3.67,2.33). The centroid for the red cluster is at the point (2,2.33).
+
+*(d) Assign each observation to the centroid to which it is closest, in terms of Euclidean distance. Report the cluster labels for each observation.*
+
+We can see that the 3 points on the left side of the plot are closest to the red centroid and the 3 points on the right are closest to the blue centroid based on Euclidian distance. Since the centriods have the same x2 value, point 6 has an x2 difference of 2.33 for either centroid, but has an x1 distance of 0.33 to the blue centroid an d2 from the red centroid. Observations 1-3 are assigned to the blue cluster and 4-6 to the red cluster.
+
+*(e) Repeat (c) and (d) until the answers obtained stop changing.*
+```{r p4}
+labels <- c(1,1,1,2,2,2)
+plot(x1, x2, col=labels,xlim = c(0, 6), ylim = c(0, 6), pch=19)
+
+centroid_blue = c(mean(x1[labels==1]), mean(x2[labels==1]))
+centroid_red = c(mean(x1[labels==2]), mean(x2[labels==2]))
+
+points(centroid_blue[1],centroid_blue[2],col=1)
+points(centroid_red[1],centroid_red[2],col=2)
+```
+
+The points are currently assigned to the closest centroid, so the assignments will not change. 
+
+*(f) In your plot from (a), color the observations according to the cluster labels obtained*
+Observations are colored and the centroids are shown. The red centroid is at (5,1) along with observation 4.
+
+**********************************************************************************************
+
+## Problem 3 (Chapter 10, p10)
+
+In this problem, you will generate simulated data, and then perform PCA and K-means clustering on the data.
+
+*a) Generate a simulated data set with 20 observations in each of three classes (i.e. 60 observations total), and 50 variables.*
+
+The data is constructed with the *rnorm()* function in R generates a random value from the normal distribution.The command *runif()* could also be used to obtain random values from a uniform distribution. There are 3 classes containing 50 variables with 20 observation in each.
+
+```{r (a) data}
+myData <- rbind(matrix(rnorm(20*50, mean = -1), nrow = 20),
+           matrix(rnorm(20*50, mean = 0.8), nrow = 20),
+           matrix(rnorm(20*50, mean = 2.5), nrow = 20))
+classesActual = c(rep(1,20), rep(2,20), rep(3,20)) #correct labels
+```
+
+*a) Perform PCA on the 60 observations and plot the first two principal component score vectors. Use a different color to indicate the observations in each of the three classes.*
+
+The principal component are used to construct the eigenspace of the data. These eigenvectors capture the most variance in the data. This is seen in the plot below where each class is already separated using only 2 components. Note that the values are already clustered along the PC1 axis which means that the first component may already be sufficient to separate them.
+
+```{r (b) pca,warning=FALSE}
+## Perform PCA
+library("factoextra")
+myData.pca = prcomp(myData)
+prinComp = myData.pca$x
+
+## Visualize separation:
+plot(prinComp[,1:2], col=c(rep(1,20), rep(2,20), rep(3,20)),pch = 16,
+     main="Data separation in eigenspace")
+legend(4.2,2, legend=c("Class 1", "Class 2","Class 3"),
+       col=c("black", "red","green"), pch=16)
+```
+
+It is important to note the variance explained by each of the eigenvectors shown in the figure below. Since one of the main purposes of this method is to lower the dimensionality of the problem, knowing how many eigenvectors should be kept for a good approximation of the original data is important.As expected from the first picture, the first eigenvector explains over 80% of the variance in the data, while the second eigenvector accounts for an additional 2%. 
+
+```{r (b) eigenvectorsVariance}
+## Visualize explained variance by principal components
+fviz_eig(myData.pca)
+
+## Visualize separation in eigenspace (explained var is in % on x and y axes): 
+fviz_pca_ind(myData.pca,
+             col.ind = "cos2", # Color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     
+             )
+```
+
+*c). Perform K-means clustering of the observations with K=3. How well do the clusters that you obtained in K-means clustering compare to the true class labels ?*
+
+In this dataset Kmeans also does a good job at separating the data -- each class is found to be clustered separately.
+
+```{r c) Kmeans 3}
+## Part c) Perform K means: (K = 3) 
+kResult3 = kmeans(myData, centers = 3)
+table(kResult3$cluster, classesActual) 
+```
+
+*d). Perform K-means clustering with K = 2*
+
+In this case one of the three classes is masked and grouped with one other class. This means that K should be chosen to be at least equal to the number of classes in the dataset.
+
+
+```{r c) Kmeans 2}
+## Part d) Perform K means (K = 2): 
+kResult2 = kmeans(myData, centers = 2)
+table(kResult2$cluster, classesActual) 
+```
+
+*e). Perform K-means clustering with K = 4*
+
+Here one of the classes is split into two clusters. 
+
+```{r c) Kmeans 4}
+## Part e) Perform K means (K = 4): 
+kResult4 = kmeans(myData, centers = 4)
+table(kResult4$cluster, classesActual) 
+```
+
+*f). Now perform K-means clustering with K=3 on the first two principal component score vectors, rather than on the raw data.*
+
+The clusters from Kmeans perfectly separate the data in the eigenspace. It would be expected for Kmeans to perform much better in the principal components space, since the data is already separated and the dimensionality is reduced. Kmeans is known to suffer from the curse of dimensionality hence clustering in a smaller space should diminish that effect.
+
+```{r c) Kmeans 3 in Eigenspace}
+kResults3_Eig = kmeans(prinComp[,1:2], centers = 3) 
+table(kResults3_Eig$cluster, classesActual) #Once again perfectly clustered
+```
+
+*g) Using the “scale()” function, perform K-means clustering with K=3 on the data after scaling each variable to have standard deviation one. How do these results compare to those obtained in (b) ?*
+
+Interestingly, if the data is scaled, the prediction worsens. This may be because scaling affects the distance between the observations. 
+
+```{r c) Kmeans 3 with Scaled Data}
+kResults3_Scaled = kmeans(scale(myData), centers = 3) 
+table(kResults3_Scaled$cluster, classesActual) 
+```
