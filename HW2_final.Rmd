@@ -1,0 +1,503 @@
+---
+title: "Homework 2 - IDS 575"
+author: "Amanda Davis, Homa Rashidisabet, Claudia Vesel, Michelle Tagge"
+date: "February 23, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Homework 2
+## **Question 1 _ Ex. 2.8 (Chapter 2, page 40)**
+In order to compare the classification performance of linear regression and k– nearest neighbor classification on the given zip.train and zip.test data, we first fit the linear regression model to the zip.train data, particularly for 2's and 3's. Then, we got the mean squared error(MSE) for the train and test sets of this linear fit as follows.
+We read the ziped data by importing files in the "Environment" tab.
+```{r question1_read}
+library (ElemStatLearn)
+
+train_2_3 <- zip.train[zip.train[,1]==2|zip.train[,1]==3, 1:257]
+test_2_3 <- zip.test[zip.test[,1]==2 | zip.test[,1]==3, 1:257]
+
+z_train23 <- zip.train[zip.train[,1]==2|zip.train[,1]==3,]
+z_test23 <- zip.test[zip.test[,1]==2|zip.test[,1]==3,]
+
+z_test23 = as.data.frame(z_test23)
+colnames(z_test23)[1] <- "id"
+train_2_3 = as.data.frame(train_2_3)
+colnames(train_2_3)[1] <- "id"
+```
+Based on the following plots, we can see the zipped data set has the information of hand writings of numbers in it.
+
+```{r question1_image}
+#--------------------------------------------------------------------- Images
+# zip.train
+par(mfrow=c(2,2))
+for (i in 1:2) {
+  im <- matrix(as.numeric(zip.train[i,2:257]), nrow = 16, ncol = 16)
+  image(t(apply(-im,1,rev)),col=gray((0:32)/32))
+  title(main="labels in zip.train")
+}
+
+# zip.train23
+for (i in 1:2) {
+  im <- matrix(as.numeric(train_2_3[i,2:257]), nrow = 16, ncol = 16)
+  image(t(apply(-im,1,rev)),col=gray((0:32)/32))
+  title(main="labels in  zip.train23")
+}
+```
+Now we solve the linear model to obtain the beta coefficients(linear regression coefficients) as follows:
+(first column of the linear regression estimates the coefficients, second column is the standard deviation error of approximation, third column is the t value, fourth Pr(>|t|);
+```{r question1_beta}
+BetaHatFromTrainset = coef(summary(lm(train_2_3$id~.,data = train_2_3)))
+summary(BetaHatFromTrainset)
+Betacoeffs = BetaHatFromTrainset[,1]
+Betaintersept = Betacoeffs[1]
+Betacoeffs = Betacoeffs[2:length(BetaHatFromTrainset[,1])]
+```
+
+When we train the model on the train set and we obtaine the linear regression coefficients, we can predict the Y values in the test set. In order to compute the accuracy of the model and validate our results, we computed the mean squared test set's error and the mean squared train set's error as follows:
+```{r question1_Yprediction}
+options(warn = -1)
+Yprediction <- c()
+Function_Yprediction <- function(dataSet,Betacof,Bintercept){
+  l = dim(dataSet)
+  for (i in 1:l[1]) {
+      Yprediction[i] = (Betacof %*% t(dataSet[i,]) )+ Bintercept
+  }
+  return(Yprediction)
+}
+YpredictionTrain = Function_Yprediction(train_2_3[,2:257],Betacoeffs,Betaintersept)
+YpredictionTest = Function_Yprediction(test_2_3[,2:257],Betacoeffs,Betaintersept)
+options(warn = -1)
+#---------------------------------------------------------------------MSE train
+OutOfSamplingErrorTEST = mean((YpredictionTest - z_test23[,1])^2)
+print(0.1516653)
+#---------------------------------------------------------------------MSE test
+OutOfSamplingErrorTRAiN = mean((YpredictionTrain - train_2_3[,1])^2)
+print(OutOfSamplingErrorTRAiN)
+```
+Based on the shown mean squared error for the test and train sets of linear regression model and knn model, knn worked better in general because its mean squared error is smaller than the other model. In addition, knn worked better with lower values of K for this specific data set. 
+```{r question1_knn}
+library("class")
+
+obs <- nrow(train_2_3)
+obsTest <- nrow(test_2_3)
+
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=1)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=1)
+NN1_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN1_OutOfSamplingErrorTEST)
+#---------------------------------------------------------------------------------- KNN: k=3
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=3)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=3)
+NN3_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN3_OutOfSamplingErrorTEST)
+#---------------------------------------------------------------------------------- KNN: k=5
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=5)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=5)
+NN5_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN5_OutOfSamplingErrorTEST)
+#---------------------------------------------------------------------------------- KNN: k=7
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=7)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=7)
+NN7_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN7_OutOfSamplingErrorTEST)
+#---------------------------------------------------------------------------------- KNN: k=11
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=11)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=11)
+NN11_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN11_OutOfSamplingErrorTEST)
+#---------------------------------------------------------------------------------- KNN: k=13
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=13)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=13)
+NN13_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN13_OutOfSamplingErrorTEST)
+#---------------------------------------------------------------------------------- KNN: k=15
+train.model <- knn(train=train_2_3, test=train_2_3, train_2_3[,1], k=15)
+train.error <- sum(train.model != train_2_3[,1])/obs
+
+test.model <- knn(train=train_2_3, test=test_2_3, cl=train_2_3[,1], k=15)
+NN15_OutOfSamplingErrorTEST <- sum(test.model != test_2_3[,1])/obsTest
+print(NN15_OutOfSamplingErrorTEST)
+```
+We show the relation of the KNN model's error and the number of K(neighborhoods) in the following plot.
+```{r question1_knnplot}
+K_Errors<-c()
+K_Errors[1] = NN1_OutOfSamplingErrorTEST; K_Errors[2] = NN3_OutOfSamplingErrorTEST; 
+K_Errors[3] = NN5_OutOfSamplingErrorTEST; K_Errors[4] = NN7_OutOfSamplingErrorTEST; 
+K_Errors[5] = NN11_OutOfSamplingErrorTEST;K_Errors[6] = NN13_OutOfSamplingErrorTEST; 
+K_Errors[7] = NN15_OutOfSamplingErrorTEST; 
+
+k<-c(1,3,5,7,11,13,15)
+plot(K_Errors~k , type = 'p', col="dark red", pch=15, axes=T)
+axis(1, at=1:16)
+axis(2)
+title(main = "OutOfSamplingError of test set - KNN")
+```
+<br />
+## Problem 2
+```{r question1_Ex2}
+library(ISLR)
+AutoData <- data.frame(Auto)
+names(AutoData)
+```
+**Part a:** The following scatter plot shows all possible plotting permutations of the features in the Auto data set. 
+```{r question1_Ex2a1}
+pairs(AutoData,col = "dark blue")
+graphics.off(); par("mar"); par(mar=c(1,1,1,1));
+```
+
+However, the following plots have more interesting meanings since the features which are more correlated conceptually are plotted.
+```{r question1_Ex2a2}
+# par(mfrow=c(2,2))
+plot(AutoData[,1],AutoData[,3], main="Scatterplot Example", xlab="mpg", ylab="displacement", col = "dark red",pch=14)
+plot(AutoData[,5],AutoData[,6], main="Scatterplot Example", xlab="weight", ylab="acceleration",col = "blue", pch=19)
+plot(AutoData[,7],AutoData[,6], main="Scatterplot Example", xlab="year", ylab="acceleration", col = "dark blue", pch=19)
+plot(AutoData[,4],AutoData[,6], main="Scatterplot Example", xlab="horsepower", ylab="acceleration", col = "green", pch=19)
+
+# par(mfrow=c(2,2))
+plot(AutoData[,8],AutoData[,3], main="Scatterplot Example", xlab="origin", ylab="displacement", col = "dark green", pch=19)
+plot(AutoData[,4],AutoData[,7], main="Scatterplot Example", xlab="horsepower", ylab="year", col = "cyan", pch=19)
+plot(AutoData[,3],AutoData[,4], main="Scatterplot Example", xlab="displacement", ylab="horsepower", col = "black", pch=19)
+plot(AutoData[,5],AutoData[,4], main="Scatterplot Example", xlab="weight", ylab="horsepower", col = "yellow", pch=19)
+
+```
+<br /> 
+**Part b:** 
+```{r question1_Ex2b}
+l = dim(AutoData)
+Quantdata <- data.frame(AutoData[,1:(l[2]-1)])
+
+# par(mfrow=c(4,2))
+dimension = dim(Quantdata);  CorrelationValues <- c(); 
+CorMx <- matrix(0, ncol = dimension[2], nrow =dimension); Features = c(1:dimension[2])
+for (i in 1:dimension[2]){
+  for (j in 1:dimension[2]){
+    CorrelationValues[j] = cor(Quantdata[,i],Quantdata[,j])
+  }
+  CorMx[i,] = CorrelationValues;
+  # plot(CorrelationValues ~ Features, type = 'p', col="blue", pch=15, axes=T)
+  # axis(1, at=1:dimension[2], labels = names(Quantdata), las=2)
+  # axis(2)
+  # title(main = "Features correlation")
+}
+CorMx <- data.frame(CorMx[1:8,1:8])
+print(CorMx)
+# row.names(CorMx) <-names(Quantdata)
+# colnames(CorMx) <- names(Quantdata)
+# write.csv(CorMx, "Question9b_CorrelationMx.csv")
+```
+![](/Users/Homai/Desktop/Hw2/Cor_9b.png)
+<br />
+**Part c:** Coefficients show that how much each feature has impact on the prediction model. For instance, the most prominent factor(predictor/feature) that influences on the output model for mpg is the "year". On the other hand, mpg is not very related to the feature "weight" because its linear regression coefficient is very small. Since the model is linear, the X and Y have a linear relation. The intercept represent the part of the model that is not relavant to the data set (X) based on the linear regression model.
+```{r question1_Ex2c}
+  MyLinRegression <- lm(Quantdata$mpg~.,data = Quantdata[2:dimension[2]])
+  summary(MyLinRegression)
+  print(MyLinRegression[1]) 
+```
+<br />
+**Part d:** 
+1. The first graph shows that there is a non-linear relationship between the responce and the predictors; <br />
+2. The second graph shows that the residuals are normally distributed and right skewed.<br />
+3.The third graph shows that the constant variance of error assumption is not true for this model.<br />
+4. The Third graphs shows that there are no leverage points. However, there on observation that stands out as a potential leverage point. <br />
+```{r question1_Ex2d}
+par(mfrow=c(2,2))
+plot(MyLinRegression)
+```
+**Part e:**  The last model is the only one with all variables being significant. The R-squared statistics estimates that 87% of the changes in the response can be explained by this particular set of predictors ( single and interaction.) 
+```{r question1_Ex2e}
+model = lm(mpg ~.+displacement:cylinders +displacement:weight +acceleration:horsepower 
+           +acceleration:year +acceleration:horsepower +weight:year, data = Quantdata)
+model[1]
+summary(model)
+
+model = lm(mpg ~.+displacement*cylinders +displacement*weight +acceleration:horsepower 
+           +acceleration:year +acceleration:horsepower +weight:year, data = Quantdata)
+model[1]
+# We have fitted the the multiple linear regression model to the mpg feature. 
+# the significance of the coefficients is shown by the stars as follows:
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# Residual standard error: 2.785 on 379 degrees of freedom
+# Multiple R-squared:  0.8766,	Adjusted R-squared:  0.8727 
+# F-statistic: 224.3 on 12 and 379 DF,  p-value: < 2.2e-16
+
+model = lm(mpg ~.-name-cylinders-acceleration+year:origin+displacement:weight+
+            displacement:weight+acceleration:horsepower+acceleration:weight, data=Auto)
+summary(model)
+model[1]
+```
+<br />
+**Part f:**  In the following we got the log(mpg), and we fit a linear regression model to the Auto data.
+```{r question1_Ex2f}
+logY <- lm(log(Quantdata$mpg)~.,data = Quantdata[2:dimension[2]])
+# summary(logY)
+logYError= print(norm(as.numeric(residuals(logY)),type="2"))
+
+logX <- lm(Quantdata$mpg~.,data = log(Quantdata[2:dimension[2]]))
+# summary(logX)
+logXError = print(norm(as.numeric(residuals(logX)),type="2"))
+
+SqrtX <- lm(Quantdata$mpg~.,data = sqrt(Quantdata[2:dimension[2]]))
+# summary(SqrtX)
+SqrtXError = print(norm(as.numeric(residuals(SqrtX)),type="2"))
+
+par(mfrow=c(3,4))
+Power2X <- lm(Quantdata$mpg~.,data = (Quantdata[2:dimension[2]])^2)
+# summary(Power2X)
+Power2XError = print(norm(as.numeric(residuals(Power2X)),type="2"))
+
+plot(logX,main = "log(X) diagnosis")
+plot(SqrtX,main = "Sqrt(X) diagnosis")
+plot(Power2X, main = "(X)^2 diagnosis")
+```
+
+## Problem 3
+*** 
+
+####This problem involves the "Boston" data set, which we saw in the lab for this chapter. We will now try to predict per capita crime rate using the other variables in this data set. In other words, per capita crime rate is the response, and the other variables are the predictors.
+
+**Part a:**  For each predictor, fit a simple linear regression model to predict the response. Describe your results. In which of the models is there a statistically significant association between the predictor and the response ? Create some plots to back up your assertions.
+
+
+First, the Boston data is loaded as a data frame: 
+```{r p15a}
+library(kableExtra)
+library(MASS)
+library(ggplot2)
+library(jtools)
+library(corrplot)
+library(ggpubr)
+library(knitr)
+BostonData <- data.frame(Boston)
+colnames(BostonData) <- c('crim','zn','indus','chas','nox','rm','age',
+                          'dis','rad','tax','ptratio','black','lstat','medv')
+
+```
+Then, a simple regression model is fitted between the crime levels (estimate) and all the predictors in the data set. 
+```{r lin Reg}
+# Get simple linear fit for all predictors: 
+attach(BostonData)
+#Zn = proportion of residential land zoned for lots over 25,000 sq.ft.
+lm.fitZn = lm(crim~zn,data = BostonData)
+summ(lm.fitZn)
+#indus = proportion of non-retail business acres per town.
+lm.fitIndus = lm(crim~indus,data = BostonData)
+summ(lm.fitIndus)
+
+#chas = Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+lm.fitChas = lm(crim~chas,data = BostonData)
+summ(lm.fitChas)
+
+#nox = nitrogen oxides concentration (parts per 10 million).
+lm.fitNox = lm(crim~nox,data = BostonData)
+summ(lm.fitNox)
+
+#rm = average number of rooms per dwelling.
+lm.fitRm = lm(crim~rm,data = BostonData)
+summ(lm.fitRm)
+
+#age = proportion of owner-occupied units built prior to 1940.
+lm.fitAge = lm(crim~age,data = BostonData)
+summ(lm.fitAge)
+
+#dis = weighted mean of distances to five Boston employment centres
+lm.fitDis = lm(crim~dis,data = BostonData)
+summ(lm.fitDis)
+
+#rad = index of accessibility to radial highways.
+lm.fitRad = lm(crim~rad,data = BostonData)
+summ(lm.fitRad)
+
+#tax = full-value property-tax rate per \$10,000.
+lm.fitTax = lm(crim~tax,data = BostonData)
+summ(lm.fitTax)
+
+#ptratio = pupil-teacher ratio by town.
+lm.fitPtratio = lm(crim~ptratio,data = BostonData)
+summ(lm.fitPtratio)
+
+#black = 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+lm.fitBlack = lm(crim~black,data = BostonData)
+summ(lm.fitBlack)
+
+#lstat = lower status of the population (percent).
+lm.fitLstat = lm(crim~lstat,data = BostonData)
+summ(lm.fitLstat)
+
+#medv = median value of owner-occupied homes in \$1000s.
+lm.fitMedv = lm(crim~medv,data = BostonData)
+summ(lm.fitMedv)
+```
+
+If we consider p<0.05 as statistically significant, then all predictors are significant, except for chas. In other words, the null hypothesis for chas cannot be rejected: $H_0: \beta_{chas} = 0$. 
+#####To compare the regression between a significant  predictor(independent variable) such as nox and an insignificant variable, such as chas, one can plot their regression line as shown below. 
+```{r plot Significant vs insignificant,echo=FALSE}
+par( mfrow = c( 1, 2 ), oma = c( 0, 0, 2, 0 ) )
+plot(nox,crim,pch = '+',main = '(p<0.05)', xlab="Nox",ylab="Crime")
+abline(lm.fitNox,lwd = 3, col = "red")
+
+plot(chas,crim,pch = '+',main = '(p>0.05)', xlab="Chas",ylab="Crime")
+abline(lm.fitChas,lwd = 3, col = "red")
+mtext("Univariate Linear Regression",outer = TRUE)
+```
+
+The $R^2$ values were summarized in a table to show goodness of fit for each linear model.The best fit lines are given by nox,lstat,rad and indus.   
+```{r RsquaredVals,echo=FALSE}
+rSqVals<-data.frame(summary(lm.fitZn)$r.squared, summary(lm.fitIndus)$r.squared,
+                    + summary(lm.fitChas)$r.squared,
+                    + summary(lm.fitNox)$r.squared,
+                    + summary(lm.fitRm)$r.squared,
+                    + summary(lm.fitAge)$r.squared,
+                    + summary(lm.fitDis)$r.squared,
+                    + summary(lm.fitRad)$r.squared,summary(lm.fitTax)$r.squared,
+                    + summary(lm.fitPtratio)$r.squared,summary(lm.fitBlack)$r.squared,
+                    + summary(lm.fitLstat)$r.squared,summary(lm.fitMedv)$r.squared)
+colnames(rSqVals)<-c('zn  ','  indus  ','  chas  ','  nox  ','  rm  ','  age  ',
+                     'dis','rad','tax','ptratio','black','lstat','medv')
+```
+```{r RsquaredTable}
+kable(round(rSqVals,3),caption = 'R squared values for Univariate Linear Regression',format="markdown")
+```
+
+
+**Part b:**  Fit a multiple regression model to predict the response using all of the predictors. Describe your results. For which predictors can we reject the null hypothesis $H_0:\beta_j = 0$ ?
+
+In this case the model used is $Y = \beta_0 + \beta_1X_1+...+\beta_{13}X_{13}$, where we interpret $\beta_1$ as the average effect on Y of a one unit increase in $X_1$ while holding all other predictors fixed.
+
+```{r MultipleReg}
+#Multiple regression
+lm.MRegfit = lm(crim ~.,data = BostonData)
+summ(lm.MRegfit)
+```
+Since the p-values for "zn", "dis", "rad", "black" and "medv" are below 0.05, then the null hypothesis can be rejected for these predictors.It is important to notice that while "indus","nox","rm","age","tax","ptratio" and "lstat" were considered significant in the univariate regression, in multiple regression they are no longer significant due to the fact that they are correlated with some of the significant predictors. The difference is that in univariate regresstion the coefficients represent the average increase in crime due to one predictor, ignoring all other predictors, while multiple regression accounts for all other predictions as well(while keeping them fixed).
+
+A correlation matrix was computed to further explore this concept. Variables such as "indus","rm","age","tax","ptratio","lstat" are correlated to significant predictors, thus they do not directly contribute to the dependent variable, but they are surrogates for variables such as "medv", "zn", "dis","rad". 
+```{r CorrMax}
+# Correlation matrix
+correlMx<-cor(BostonData)
+corrplot(correlMx, method ="circle")
+```
+
+
+
+For example, variable "dis" (weighted mean of distances to five Boston employment centres) is strongly correlated to "indus" (-0.7) and "age" (-0.7), implying that the proportion of non-retail business acres per town (indus) and the proportion of owner-occupied units built prior to 1940 (age) is typically lower in areas where the distances to Boston employment (dis) is higher, but they do not necessarily affect the crime rate (dependent variable). While higher "indus" values are associated with higher "crime" values, "indus"" does not actually affect crime, implying that it is simply taking credit for the effect of "dis"" on crime.
+
+
+
+
+
+**Part c:**  How do your results from (a) compare to your results from (b) ? Create a plot displaying the univariate regression coefficients from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis.
+
+
+The comparison is explained in (b), where the effect of correlation between some of the predictors changes the level of significance of some of the independent variables in predicting the dependent variable. 
+```{r compareCoeffs}
+coeffsLReg<- vector("numeric",0)
+#Concatenate all the linear coeffs 
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitZn))["zn","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitIndus))["indus","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitChas))["chas","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitNox))["nox","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitRm))["rm","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitAge))["age","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitDis))["dis","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitRad))["rad","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitTax))["tax","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitPtratio))["ptratio","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitBlack))["black","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitLstat))["lstat","Estimate"])
+coeffsLReg <-c(coeffsLReg, coef(summary(lm.fitMedv))["medv","Estimate"])
+# Concatenate all the multiple regression coeffs
+coeffsMReg<- coefficients(lm.MRegfit)
+coeffsMReg<-coeffsMReg[-1]
+```
+```{r compareCoeffsPlot, echo=FALSE}
+# Plotting single vs multiple reg coeffs: 
+names<-c('zn','indus','chas','nox','rm','age',
+         'dis','rad','tax','ptratio','black','lstat','medv')
+allCoeffs<-data.frame(predictorsName = names,uniVariateReg = coeffsLReg, multipleVarReg = coeffsMReg);
+p<-ggplot(allCoeffs, aes(x = uniVariateReg, y = multipleVarReg)) +
+  geom_point(aes(size = 12, color = factor(names)))
+p+ theme(legend.position="top")
+```
+
+
+Variable nox seems to be an outlier, due to its large (~30) univariate coefficient. To further inspect the difference between the coefficients from these two methods, the absolute value of the difference between the univariate and multivariate regression were plotted as well; note that the "nox" coefficient was removed since its difference was the largest.
+```{r compareCoeffsDiff, echo=FALSE}
+allCoeffs<-allCoeffs[-4, ] 
+allCoeffs$diff = abs(allCoeffs$uniVariateReg-allCoeffs$multipleVarReg)
+ggplot(data=allCoeffs, aes(x=predictorsName, y=diff)) +
+  geom_bar(stat="identity", width=0.5)+
+  labs(x = "Predictors", y = "||UnivariateCoeff-MultivariateCoeff||")
+```
+
+Since indus, rm, ptratio and nox are not significant in the multiregression case, but significant in the univariate case, it makes sense that their coefficients are the most different. 
+
+
+**Part d:**  Is there evidence of non-linear association between any of the predictors and the response ? 
+A model of the form $Y = \beta_0 + \beta_1X+ \beta_X^2 +\beta_3X^3 +\eta$ was constructed for each predictor to show if additional coefficients create a better fit. 
+```{r polyFits}
+polyfitZn<-lm(crim~poly(zn,3),data = BostonData)
+polyfitIndus<-lm(crim~poly(indus,3),data = BostonData)
+polyfitNox<-lm(crim~poly(nox,3),data = BostonData)
+polyfitRm<-lm(crim~poly(rm,3),data = BostonData)
+polyfitAge<-lm(crim~poly(age,3),data = BostonData)
+polyfitDis<-lm(crim~poly(dis,3),data = BostonData)
+polyfitRad<-lm(crim~poly(rad,3),data = BostonData)
+polyfitTax<-lm(crim~poly(tax,3),data = BostonData)
+polyfitPtratio<-lm(crim~poly(ptratio,3),data = BostonData)
+polyfitBlack<-lm(crim~poly(black,3),data = BostonData)
+polyfitLstat<-lm(crim~poly(lstat,3),data = BostonData)
+polyfitMedv<-lm(crim~poly(medv,3),data = BostonData)
+#summ(polyfit) function was used to inspect the R^2 and p values for each fit
+```
+The p value for each coefficient in the fit is inspected to assess whether they are significant (p<0.05). If the quadratic/cubic coefficient has a significant value, then the nonlinear model may be justified for that predictor. In this case "indus", "nox", "age", "dis", "ptratio" and "medv" seem to justify the cubic coefficient since their p value is below 0.05, thus they reject Null hypothesis. 
+
+```{r pValueTable,echo=FALSE}
+pVals<-data.frame(summary(polyfitZn)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitIndus)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitNox)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitRm)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitAge)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitDis)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitRad)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitTax)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitPtratio)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitBlack)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitLstat)$coefficients[,"Pr(>|t|)"],
+              + summary(polyfitMedv)$coefficients[,"Pr(>|t|)"])
+colnames(pVals)<-c('zn  ','  indus  ','  nox  ','  rm  ','  age  ',
+                     'dis','rad','tax','ptratio','black','lstat','medv')
+rownames(pVals)<-c('beta0','beta1','beta2','beta3')
+```
+```{r pValueTablesShow}
+knitr::kable(pVals, caption = "P-values table", floating.environment="sidewaystable",format="markdown")
+```
+
+Another method to check for nonlinearity is to assess the prediction versus residual trend; a non-random pattern usually suggests that a simple linear model may not be sufficient, thus a nonlinear trend may be better. A residual versus prediction plot was constructed for the univariate regression of "indus", "nox", "dis" and "medv" as their p-values for the cubic coefficient was near zero, implying that they should follow a nonlinear fit. 
+
+```{r residualVsPrediction plots,echo=FALSE}
+par( mfrow = c( 1, 2 ), oma = c( 0, 0, 2, 0 ) )
+plot(predict(lm.fitDis),residuals(lm.fitDis),xlab='Prediction Dis',ylab='Residual Dis', pch=18, col="blue")
+plot(predict(lm.fitMedv),residuals(lm.fitMedv),xlab='Prediction Medv',ylab='Residual Medv', pch=18, col="blue")
+mtext("Non-random pattern (nonlinear)",outer = TRUE)
+par( mfrow = c( 1, 2 ), oma = c( 0, 0, 2, 0 ) )
+plot(predict(lm.fitRad),residuals(lm.fitRad),xlab='Prediction Rad',ylab='Residual Rad', pch=18, col="red")
+plot(predict(lm.fitZn),residuals(lm.fitZn),xlab='Prediction Zn',ylab='Residual Zn', pch=18, col="red")
+mtext("Random pattern (linear)",outer = TRUE)
+```
+

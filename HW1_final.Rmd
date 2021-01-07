@@ -1,0 +1,375 @@
+---
+title: "Homework 1 (IDS575)"
+author: "Homa Rashidisabet & Claudia Vesel"
+date: "February 10, 2019"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework 1
+
+## *Question 5*
+*What are the advantages and disadvantages of a very flexible (versus less flexible) approach for regression or classification? Under what circumstances might a more flexible approach be preferred to a less flexible approach? When might a less flexible approach be preferred?*  
+
+
+The advantage of a very flexible approach is that it may be more robust in cases where a highly nonlinear model is necessary because it can generate a wide range of shapes to estimate the function. While this method can decrease the bias, and is preferred in cases where **prediction** is important, it can also lead to overfitting, or it may model the noise too closely. Also, the approach requires a large number of parameters, making it hard to interpret.
+A flexible model would thus perform better when the sample size is large and the number of predictors is small as it may decrease the likelihood of overfitting. 
+
+On the other hand, a more restrictive approach is preferred when **inference** is important. a simpler model will have a higher interpretability. While the fit will be more biased, it yields a more transparent relationship between individual predictors and their associate response. This is especially important when the variance of errors is large, or when the number of predictors is large, but the sample size is small.  
+
+
+## *Question 7* - Homai you can start adding stuff 
+## *Question 8* 
+Load the [College.csv](http://www-bcf.usc.edu/~gareth/ISL/data.html) data set which contains variables for 777 universities and colleges in the US.  
+
+**Part a and b:** Load the data and remove the name of the colleges
+```{r question8ab}
+#Read data set 
+college<-read.csv('~/Desktop/College.csv')
+#fix(college)
+#Assign the names of colleges 
+# rownames(college) = college[,1]
+#fix(college)
+#Get rid of names in data frame since it's not used in computations
+college = college[,-1]
+#fix(college)
+```
+
+
+**Part c:** 
+c(i). Use the functions *summary()* to explore the data set:
+```{r question8ci}
+summary(college)
+```
+
+
+c(ii) Use the command *pairs()* to scatter the first 10 columns of the data frame. 
+```{r question8ci2}
+pairs(college[,1:10]) #scatter of first 10 columns
+```
+
+
+c(iii). Use the *plot()* function to produce side-by-side boxplots of Outstate versus Private universities.
+```{r question8cii}
+#plots instate vs out of state
+plot(college[,1],college[,9],main="Boxplot Outstate vs Private") 
+```
+
+<!-- HOMAAAAIIIIIIIII added -->
+```{r question8ciiHomai}
+college<-read.csv('~/Desktop/College.csv')
+boxplot(college[,1], college[,9], type = "l", main="Boxplot of private vs outstate", col= "dark cyan", 
+        ylab="distributions of two predictors")
+axis(1, at=1:2, labels = c('Private','Outstate'), las=2); axis(2)
+
+lines(college[,1], college[,9], col="dark red")
+```
+
+c(iv). Create a new variable called *Elite* and bin universities based on whether ot not the proportion of students coming from the top 10% of their highschool classes exceeds 50%.   
+```{r question8civ}
+#Binning Top 10%
+Elite = rep("No",nrow(college)) #construct a qualitative variable initialized w No
+Elite[college$Top10perc>50] = "Yes"  #If Top10>50 students then change No to yes
+Elite = as.factor(Elite)             #SetElite to a factor type of data instead of character (qualitative data)
+college = data.frame(college,Elite)  #Add the Elite column to the college data set
+summary(Elite) #No = 699; Yes = 78
+```
+
+
+c(v-vi).Use *hist()* to produce histograms with different numbers of bvins for a few of the quantitative variables. 
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+```{r question8cvHomai}
+#Binning Top 10%
+Elite = rep("No",nrow(college)) #construct a qualitative variable initialized w No
+Elite[college$Top10perc>50] = "Yes"  #If Top10>50 students then change No to yes
+Elite = as.factor(Elite)             #SetElite to a factor type of data instead of character (qualitative data)
+college$Elite = Elite  
+
+```
+
+
+## *Question 10* 
+**Part a:** *Mass library* is included in *r* and *Boston* data set is loaded.
+```{r question10a}
+library(MASS)
+
+?Boston
+
+BostonData <- data.frame(Boston);
+colnames(BostonData) <- c('crim','zn','indus','chas','nox','rm','age',
+                          'dis','rad','tax','ptratio','black','lstat','medv')
+write.csv(BostonData, "Question10_BostonData.csv")
+```
+***Housing Values in Suburbs of Boston*** <br />
+**Format** <br />
+rows corresponding to different formulations of the housing value equation and the columns corresponding to different formulations of the willingness-topay equation. <br />
+Each row represents a new observation (suburb) each column is as follows:<br />
+**crim**<br />
+per capita crime rate by town.<br />
+**zn**<br />
+proportion of residential land zoned for lots over 25,000 sq.ft.<br />
+**indus**<br />
+proportion of non-retail business acres per town.<br />
+**chas**<br />
+Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).<br />
+**nox**<br />
+nitrogen oxides concentration (parts per 10 million).<br />
+**rm**<br />
+average number of rooms per dwelling.<br />
+**age**<br />
+proportion of owner-occupied units built prior to 1940.<br />
+**dis**<br />
+weighted mean of distances to five Boston employment centres.<br />
+**rad**<br />
+index of accessibility to radial highways.<br />
+**Tax**<br />
+full-value property-tax rate per \$10,000.<br />
+**ptratio**<br />
+pupil-teacher ratio by town.<br />
+**black**<br />
+1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.<br />
+**lstat**<br />
+lower status of the population (percent).<br />
+**medv**<br />
+median value of owner-occupied homes in \$1000s.<br />
+
+
+<!-- ============================================================================================= -->
+**Part b:** We plotted observation values for all permutations of each two features. The covariance matrix for the features is shown in the table to understand the dependence of features better. Based on both plot and table, the prominent relations of each fixed feature with other features is given as follows:
+
+Crime and *zn*, *dis* and *medv* have reverse relation while crime and age have direct relation. 
+*zn* has reverse relation with *indus*, *nox* and *rad*, but it is highly correlated with *dis* and *medv*.
+Indus is highly (positively) correlated with *age*, *nox*, ptratio and istat, but negatively correlated with *dis*.
+
+```{r question10b}
+plot(Boston[1:14], col = "dark red")
+summary(Boston)
+```
+
+**Part c:** In order to analyze the effect of the per capita crim rate with other predictors, we need to compute the covariance matrix and correlation matrix of the **Bostone** data set as follows.
+```{r question10c1}
+CovMatrix = cov(Boston)
+CovMatrix <- data.frame(CovMatrix)
+row.names(CovMatrix) <- c('crim','zn','indus','chas','nox','rm','age',
+                          'dis','rad','tax','ptratio','black','lstat','medv')
+colnames(CovMatrix) <- c('crim','zn','indus','chas','nox','rm','age',
+                         'dis','rad','tax','ptratio','black','lstat','medv')
+write.csv(CovMatrix, "Question10_CovMxByCode.csv")
+```
+![](/Users/Homai/Desktop/CovMx.png) 
+<!-- Theja/Hw1 -->
+
+```{r question10c2}
+dimension = dim(Boston);  CorrelationValues <- c(); CorMx <- matrix(0, ncol = 14, nrow =14)
+for (i in 1:dimension[2]){
+  for (j in 1:dimension[2]){
+    CorrelationValues[j] = cor(Boston[,i],Boston[,j])
+  }
+ CorMx[i,] = CorrelationValues;
+}
+CorMx <- data.frame(CorMx);
+row.names(CorMx) <- c('crim','zn','indus','chas','nox','rm','age',
+                      'dis','rad','tax','ptratio','black','lstat','medv')
+colnames(CorMx) <- c('crim','zn','indus','chas','nox','rm','age',
+                     'dis','rad','tax','ptratio','black','lstat','medv')
+write.csv(CorMx, "Question10_CorrelationMx.csv")
+```
+![](/Users/Homai/Desktop/CorMx.png)
+
+
+<br />As it is shown in the bellow plot, the feature of per capita crime rate is more correlated with index of accessibility to radial highways than other features. Their correlation is 0.6. On the other hand, the per capita crime rate is negatively more correlated with dis (weighted mean of distances to five Boston employment centres), black (1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town), medv(median value of owner-occupied homes in \$1000s) with correlation value of -0.4. In addition, per capita crime rate is not correlated with chas (Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)) since its correlation value is very close to zero.
+
+
+```{r question10c3}
+dimension = dim(Boston); CorrelationValues <- c();
+for (j in 1:dimension[2]){
+  CorrelationValues[j] = cor(Boston[,1],Boston[,j])
+}
+Features = c(1:14)
+plot(CorrelationValues ~ Features, type = 'p', col="dark cyan", pch=17, axes=F)
+axis(1, at=1:14, labels = c('crim','zn','indus','chas','nox','rm','age','dis','rad',
+                            'tax','ptratio','black','lstat','medv'), las=2)
+axis(2)
+title(main = "Correlation of per capita crim with other features")
+```
+
+
+```{r question10c4}
+graphics.off(); par("mar"); par(mar=c(1,1,1,1));
+par(mfrow=c(5,3))
+dimension = dim(Boston);  CorrelationValues <- c();
+for (i in 1:dimension[2]){
+  for (j in 1:dimension[2]){
+    CorrelationValues[j] = cor(Boston[,i],Boston[,j])
+  }
+  Features = c(1:14)
+  plot(CorrelationValues ~ Features, type = 'p', col="blue", pch=12, axes=F)
+  axis(1, at=1:14, labels = c('crim','zn','indus','chas','nox','rm','age','dis','rad',
+                              'tax','ptratio','black','lstat','medv'), las=2)
+  axis(2)
+  title(main = "Features correlation")
+}
+```
+![](/Users/Homai/Desktop/FeaturesCorrelations.png) 
+
+
+**Part d:** To figure out which suburbs of Boston appear to have particularly high crim rate, tax rates and the Pupil-teacher ratio, we computed the following distrbution of data for all predictors including these three features as we show in both following plots and table.<br />
+
+
+![](/Users/Homai/Desktop/10d.png)
+
+<br />In the table the third quartile (75% of the crime rate) is 3.7 but the maximum crime rate is 89 which is particularly different from the third quartile. 124 suburbs has 3.7 crime rate which is equal to the third quartile of per capita crime distribution. Thus, to analyze particularly high crime rates in the following code, we selected 30 as the threshold in which only 8 suburbs will remain. 
+
+In addition, based on the above table, the tax rate distribution shows that 75% of the tax rates are about 666 and the maximum value is 711. Thus, we select 666 as the threshold for obtaining how many suburbs have particularly high tax rate. With the chosen threshold, 5 suburbs have very high tax rates. 
+
+In a same way, the pupil-teacher ratio by town distribution shows 75% of the data set are 20.2 while the maximum is 22. Regarding the mode value for ptratio which is same as its third quartile, best threshold for finding how many suburbs have particularly high ptratio can be 21.2. With threshold of 21, 18 suburbs will remain while by selecting 21.2 threshold only 2 suburbs will remain showing very high ptratios.
+
+```{r question10d1}
+#---------------------------------------high crim
+HighCrim <- data.frame(t(Boston[,1]))
+NumofHighCrim=0
+for (i in 1:length(HighCrim)){
+  if (HighCrim[i] > 30){
+    NumofHighCrim = NumofHighCrim + 1;
+  }
+}
+print(NumofHighCrim)
+#-----------------------------------------high tax
+HighTax <- data.frame(t(Boston[,10]))
+NumofHighTax=0
+for (i in 1:length(HighTax)){
+  if (HighTax[i] > 666){
+    NumofHighTax = NumofHighTax + 1;
+  }
+}
+print(NumofHighTax)
+#-----------------------------------------high ptratio
+Highptratio <- data.frame(t(Boston[,11]))
+NumofHighptratio=0
+for (i in 1:length(Highptratio)){
+  if (Highptratio[i] > 21.2){
+    NumofHighptratio = NumofHighptratio + 1;
+  }
+}
+print(NumofHighptratio)
+```
+Also all the explained information above can be seen in the following violin plot which shows a combo diagram of box plot and kernel distribution of crim, tax ratio and ptratio in one plot. Also, before making these meaningful plots, we normalize the **Boston** data set because based on the above table, dispersion of each predictors for different observations is high.
+```{r question10d3}
+library(moments)
+library(vioplot)
+library(ggplot2)
+
+skw <- c(); kurt <- c()
+
+myMatrixNormalizer <- function(A){
+  l = dim(A)
+  for (i in 1:l[2]){
+    A[,i] = A[,i]/(norm(A[,i],type="2")); 
+    skw[i] = skewness(A[,i])
+    kurt[i] = kurtosis(A[,i])
+  }
+  print(skw)  # Skewness of Bostone data
+  print(kurt) # Kurtosis of Bostone data
+  return(A)
+}
+Boston = myMatrixNormalizer(Boston)
+
+vioplot(Boston[,1], Boston[,2],Boston[,3],Boston[,4],Boston[,5],Boston[,6], Boston[,7],
+        Boston[,8], Boston[,9], Boston[,10],Boston[,11], Boston[,12],Boston[,13],Boston[,14],
+        names=F, col="gold")
+axis(1, at=1:14, labels = c('crim','zn','indus','chas','nox','rm','age',
+                            'dis','rad','tax','ptratio','black','lstat','medv')
+     , las=2)
+axis(2)
+title("Violin Plots of housing values in suburbs of Boston")
+
+vioplot(Boston[,1], Boston[,10],Boston[,11],names=F, col="red")
+axis(1, at=1:3, labels = c('crim','tax','ptratio'), las=2); axis(2)
+title("Violin Plots of crim, tax, ptratio")
+```
+
+For a better understanding the distribution of crim rate, tax rate and ptratio, we show the histogram and the distribution of these three predictors in the following plots:
+```{r question10d4}
+Boston = myMatrixNormalizer(Boston)
+
+par(mfrow=c(3,2))
+#Histogram
+hist(Boston[,1], breaks=12, col="dark red",
+     xlab="per capita crime rate by town", main="Histogram of crime rate by town")
+d <- density(Boston[,1]); plot(d, "Kernel Density of crim rate"); 
+polygon(d, col="red", border="black")
+
+hist(Boston[,10], breaks=12, col="dark green",
+     xlab="full-value property-tax rate per $10,000.", main="Histogram of tax")
+d <- density(Boston[,10]); plot(d, "Kernel Density of tax"); 
+polygon(d, col="green", border="black")
+
+hist(Boston[,11], breaks=12, col="dark blue",
+     xlab="pupil-teacher ratio by town", main="Histogram of ptratio")
+d <- density(Boston[,11]); plot(d, "Kernel Density of ptratio"); 
+polygon(d, col="blue", border="black")
+```
+
+**Part e:** In the following code we cound how many observation in the data set for the *chas* feature is equal to one. These observations show which suburbs bound the Charles river.
+```{r question10e}
+CharlesRiver <- data.frame(t(Boston[,4]))
+NumofBoundCharlesRiver=0
+for (i in 1:length(CharlesRiver)){
+  if (CharlesRiver[i] == 1){
+    NumofBoundCharlesRiver = NumofBoundCharlesRiver + 1;
+  }
+}
+print(NumofBoundCharlesRiver)
+```
+
+**Part f:** We showed the distribution of the pupil-teacher-ratio in the part *d* in both plot and table. In the following piece of code, we plot the box plot of the ptratio which shows minimum, first, second, third quartiles, and maximum of the pupil-teacher-ratio. The median for ptratio is equal to 19.
+```{r question10f}
+rm(Boston)
+library(MASS)
+
+boxplot(Boston[,11], main="Boxplot of ptratio", col= "dark cyan", 
+        ylab="pupil-teacher ratio by town")
+```
+
+**Part g:** The minimum of medv is equal to 5 as we showed in *part a* tabels and violin plot. The max of crim rate is 89, while in the suburb with minimum medv, crime rate is 68 which is substantial, also as we expect proportion of residential land zoned for lots over 25,000 sq.ft is equal to zero. In addition proportion of non-retail business acres per town is in the third quartile of its disrtibution. in the minimum medv suburb, charles river is not bounded. Also, the portion of blacks by town is high and tax rate is high (less than maximum but in third quartile of its distribution). The nitrogen oxides concentration in this suburb with minimum medv is relatively high in its third quartile. pupil-teacher and lower status of the population ratio by town is also high and close to its maximum.
+
+```{r question10g}
+# min med = 5
+par(mfrow=c(3,1))
+boxplot(Boston[,14], main="Boxplot of ptratio", col= "dark cyan", 
+        ylab="medv")
+hist(Boston[,14], breaks=12, col="dark red",xlab="median value of owner-occupied homes in $1000s", main="Histogram of medv")
+d <- density(Boston[,14]); plot(d, "Kernel Density of medv"); polygon(d, col="dark blue", border="red")
+
+#values of other predictors
+print(min(Boston[,14]))
+print(Boston[406,])
+```
+
+**Part h:** In the following code we compute the number of suburbs which have average more than seven rooms per dwellings and then those which have average more than eight rooms per dwellings.
+
+```{r question10h}
+AverageNumberRooms  <- data.frame(t(Boston[,6]))
+NumofrmMore7=0;NumofrmMore8=0;
+for (i in 1:length(AverageNumberRooms)){
+  if (AverageNumberRooms[i] > 7){
+    NumofrmMore7 = NumofrmMore7 + 1;
+  }
+  if (AverageNumberRooms[i] > 8){
+    NumofrmMore8 = NumofrmMore8 + 1;
+  }
+}
+print(NumofrmMore7)
+print(NumofrmMore8)
+```
+

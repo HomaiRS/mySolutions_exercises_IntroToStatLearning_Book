@@ -1,0 +1,104 @@
+---
+title: "Ex. 8 (Chapter 8, page 333)"
+output: html_document
+---
+
+```{r all HR libraries,message=FALSE,warning=FALSE}
+library(ISLR)
+library(tree)
+library(rattle) 
+library(rpart)
+library(randomForest)
+```
+<br />
+*a) Split the data set into a training set and a test set. *
+We used 50% of the Carseats data for the train set and 50% for the test set. The train set is formed by randomly sampling all features (columns) of Carsseats data. The remaining rows will be stored in test set.
+```{r EX.8.a}
+set.seed(1)
+train <- sample(1:nrow(Carseats), nrow(Carseats) / 2)
+MyTrainSet <- Carseats[train, ]
+MyTestSet <- Carseats[-train, ]
+```
+*b) Fit a regression tree to the training set. Plot the tree, and inter- pret the results. What test MSE do you obtain?*
+<br />
+We fitted a regression tree to the training set.
+```{r EX.8.b}
+MyTree <- tree(MyTrainSet$Sales ~ ., data = MyTrainSet)
+MyFancyTree <- rpart(MyTrainSet$Sales ~ ., data = MyTrainSet)
+summary(MyTree)
+```
+<br />
+The majority class is shown in each node. The ratio under the nodes indicate misclassification rates on test data.
+```{r EX.8.b.1}
+fancyRpartPlot(MyFancyTree, palettes=c("Blues", "Reds"), main="target",cex=0.78) 
+```
+<br />
+After computing the coefficients by regression tree by using "predict" function, we estimated response values. Also the mean squared error of prediction and actual response values is:
+```{r EX.8.b.2}
+yhat <- predict(MyTree, newdata = MyTestSet)
+MSETree = mean((yhat - MyTestSet$Sales)^2)
+print(MSETree)
+```
+<br />
+*c) Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test MSE?*
+<br /> The index of minimum number of missclassifieds obtained from cross validation is as follows. The minimum number of missclassifieds, the optimal number of folds of the cross-validation are all given bellow.
+
+In addition, we plotted number of missclassifieds versus size of the tree to find the optimal tree size. The red point shows the optimal point of the curve where both size and number of missclassifieds are minimized. Same with the second plot (right) that shows the optimal number of folds and size of tree as the green point.
+```{r EX.8.c}
+MyCV <- cv.tree(MyTree)
+print(MyCV)
+par(mfrow = c(1, 2))
+plot(MyCV$size, MyCV$dev, type = "b")
+###--------
+MinTree <- which.min(MyCV$dev)
+print(MinTree)
+###------- 
+MinNumbermissclassified = MyCV$dev[MinTree]
+print(MinNumbermissclassified)
+###-------
+OptimalTreeSize = MyCV$size[MinTree]
+print(OptimalTreeSize)
+###-------
+points(MyCV$size[MinTree], MyCV$dev[MinTree], col = "red", cex = 2, pch = 20)
+plot(MyCV$k, MyCV$dev, type = "b")
+points(MyCV$k[MinTree], MyCV$dev[MinTree], col = "green", cex = 2, pch = 20)
+```
+<br />
+Now that we found the optimal tree size, we can prune the fitted regression tree, obtained in *part a*, to compare if the mean square error gets worse or better.
+```{r EX.8.c.1}
+TreePrune <- prune.tree(MyTree, best = OptimalTreeSize)
+plot(TreePrune)
+text(TreePrune, pretty = 0,cex=0.9)
+
+yhatPrune <- predict(TreePrune, newdata = MyTestSet)
+MSEPrunedTree = mean((yhatPrune - MyTestSet$Sales)^2)
+print(MSEPrunedTree)
+```
+<br />
+As you can see, the MSE of regression tree not only does not neccessarily get better by pruning, but also it might increases the Test MSE. 
+
+*d) Use the bagging approach in order to analyze this data. What test MSE do you obtain? Use the importance() function to de- termine which variables are most important.*
+<br />
+In the following we show the prediction mean squared test error of bagging (random forest) method.
+The fit model by random forest is sensitive to the two parameters of number of trees to grow and the number of variables randomly sampled as candidates at each split. The number of trees to grow should not be set to too small a number, to ensure that every input row gets predicted at least a few times, and it should not be large that do overfitting.
+```{r EX.8.d}
+len = dim(MyTrainSet)
+MyBagging <- randomForest(MyTrainSet$Sales ~ ., data = MyTrainSet,mtry = 10, ntree = 500, importance = T)
+yhat.bag <- predict(MyBagging, newdata = MyTestSet)
+MSEBagging = mean((yhat.bag - MyTestSet$Sales)^2)
+print(MSEBagging)
+```
+As the "importance()" function bellow shows, the "Price" and "ShelveLoc" are the two most important variables.
+```{r EX.8.d.1}
+importance(MyBagging)
+```
+<br />
+*e) Use random forests to analyze this data. What test MSE do you obtain? Use the importance() function to determine which vari- ables are most important. Describe the effect of m, the number of variables considered at each split, on the error rate obtained.*
+```{r EX.8.e}
+MyRandForest <- randomForest(MyTrainSet$Sales ~ ., data = MyTrainSet, mtry = 3, ntree = 500, importance = TRUE)
+yhat.rf <- predict(MyRandForest, newdata = MyTestSet)
+MSErandForest = mean((yhat.rf - MyTestSet$Sales)^2)
+print(MSErandForest)
+```
+
+

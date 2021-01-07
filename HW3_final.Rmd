@@ -1,0 +1,457 @@
+---
+title: "HW 3"
+author: "Homa, Claudia, Amanda, Michelle"
+date: "March 17, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+### **Ex. 3.6 (Chapter 3, page 95)**
+*Question: Show that the ridge regression estimate is the mean (and mode) of the posterior distribution, under a Gaussian prior $\beta ~ N(0,\tau^2 I)$, and Gaussian sampling model $y~N(X\beta,\sigma^2 I)$. Find the relationship between the regularization parameter $\lambda$ in the ridge formula, and the variances $\tau$ and $\sigma^2$.*
+
+*Answer: *
+The ridge regression estimate is given by: $\beta = (X^TX+\lambda I)^{-1}X^TY$ and is obtained by minimizing the $RSS(\lambda,\beta)$ function subject to a constraint that penalizes the coefficients. Alternatively, the coefficients can be obtained by computing the mean of the posterior distribution with a known Gaussian prior.
+
+According to Bayes' Rule, the posterior probability ($P(\beta|Y,X)$) is proportional to the likelihood ($P(Y,X|\beta)$) and the prior ($P(Y,X)$). 
+$$P(\beta|Y,X) = \frac{P(Y,X|\beta)P(\beta)}{P(Y,X)}$$
+Given that $Y$ and $\beta$ are normally distributed with $N(X^T\beta,\sigma^2 I)$ and $N(0,\tau^2 I)$ respectively, then posterior probability must also be normally distributed. 
+
+With these assumptions in mind, the mean of the posterior probability can thus be estimated via the maximum a posteriori estimate technique (similar to MLE, but with a known information about the prior distribution). Since the $P(Y,X)$ does not depend on $\beta$, then the maximization problem becomes: 
+
+$$max_{\beta} P(Y,X|\beta)P(\beta)$$
+
+$$max_{\beta} \frac{1}{(2\pi)^{\frac{p}{2}}\sigma^p}exp\left(-\frac{(Y-X\beta)^T(Y-X\beta)}{2\sigma}\right) \frac{1}{(2\pi)^{\frac{p}{2}}\tau^p}exp\left(-\frac{\beta^T\beta}{2\tau}\right)$$
+This is equivalent to minimizing the -log likelihood as shown below, where all terms that are not functions of $\beta$ are taken into consideration by $M$.
+$$min_{\beta}-log(P(Y,X|\beta)P(\beta))$$
+$$min_{\beta} \left(M+\frac{(Y-X\beta)^T(Y-X\beta)}{2\sigma^2}+\frac{\beta^T\beta}{2\tau^2}\right) $$
+The expression above can be minimized by solving for the beta which satisfies the optimality condition
+$$\frac{d}{d\beta} \left(M+\frac{(Y-X\beta)^T(Y-X\beta)}{2\sigma^2}+\frac{\beta^T\beta}{2\tau^2}\right) = 0$$
+$$\frac{d}{d\beta} \left(\frac{(Y^TY-2Y^TX\beta+\beta^TX^TX\beta)}{2\sigma^2}+\frac{\beta^T\beta}{2\tau^2}    \right) = 0$$
+$$ -\frac{X^TY+X^TX\beta}{\sigma^2}+\frac{\beta}{\tau^2}     = 0$$
+By factoring out $\beta$ the optimal solution is found. 
+$$ \left(X^TX+\frac{\sigma^2}{\tau^2}I  \right)\beta  = X^TY$$
+$$ \beta_{opt} = \left(X^TX+\frac{\sigma^2}{\tau^2}I  \right)^{-1} X^TY$$
+It is clear then, that when replacing the $\frac{\sigma^2}{\tau^2}$ with the coefficient penalizer $\lambda$ the ridge regression estimate is the same. 
+Also, since the likelihood and the prior distribution is normal, then the covariance takes the form: 
+$$ \Sigma^{-1} = \frac{1}{\sigma^2} \left(X^TX+\frac{\sigma^2}{\tau^2}I \right)$$
+Then the mean of the posterior distribution can also be written in terms of the covariance as follows: 
+$$\beta = \frac{1}{\sigma^2} \Sigma X^TY $$
+
+
+<br />
+
+### **Question 14 Chapter 3**
+
+*Part (a)*
+```{r EX2a}
+set.seed(1)
+x1=runif(100)
+x2=0.5*x1+rnorm(100)/10
+y=2+2*x1+0.3*x2+rnorm(100)
+```
+Form - Y = 2 +2X1+0.3X2+E; the coefficients are: 2, 2, and 0.3.
+
+*Part (b)*
+```{r EX2b}
+cor(x1, x2)
+plot(x1, x2, main = "Relationship between X1 and X2")
+```
+
+
+The correlation between $x_1$ and $x_2$ is 0.8351212.
+
+*Part (c)*
+```{r EX2c}
+lin_fit <- lm(y ~ x1 + x2)
+# summary(lin_fit)
+```
+
+$x_1$ is significant at p = 0.01, while the adjusted R-squared is 0.1925.
+
+The regression coefficients are: 2.13, 1.43, and 1.01. These coefficients are not close to the true coefficient values. The null hypothesis for $H_0: \beta = 0$ is rejected because p < 0.05. The null hypothesis for $H_0: \beta_2 = 0$ is failed to be rejected because p > 0.05. 
+
+*Part (d)*
+```{r EX2d}
+lin_x1_fit <- lm(y ~ x1)
+# summary(lin_x1_fit)
+```
+x1 is significant, again. The intercept coefficient is 2.1124 and x1 coefficient is 1.9759.
+
+The adjusted R-squared value is 0.1942. The null can be rejected at $H_0: \beta_1 = 0$ because p < 0.05.
+
+*Part (e)*
+```{r EX2e}
+lin_x2_fit <- lm(y ~ x2)
+# summary(lin_x2_fit)
+```
+The intercept coefficient is 2.3899 and the x2 coefficient is 2.8996. Both are significant at the highest level. The adjusted R-squared value is 0.1679. The null hypothesis $H_0: \beta = 0$ is rejected because p < 0.05. 
+
+*Part (f)*
+The results from c-e are not contradictory. Part (c) includes both x1 and x2 which are collinear together, which impacts the clarity of the role of x1 and x2 in this model on y. In both part (d) and (e) univariate models, the independent variable was significant to the highest level and the R-squared values were similar. 
+
+<br />
+
+### **Question 5 Chapter 4**
+
+*Part (a)*
+If the Bayes decision boundary is linear, we expect LDA to perform better on the test set and require less data to get an accurate model. We expect the QDA to perform better on the training set as is it more flexible and it can perform better in the presence of a limited number of training  observations.
+
+*Part (b)*
+If the Bayes decision boundary is non-linear, we expect the QDA to perform better on both the training and test sets. As it assumes a quadratic decision boundary, it can model a wider range of problems.
+
+*Part (c)*
+As the sample size increases, we expect the test prediction of QDA relative to LDA to improve. As the QDA is very flexible and has a higher variance, so it can result in overfitting with a small sample size. With a larger sample size, as a more flexible model needs more data to produce a better fit.
+
+*Part (d)*
+False. The QDA would need a lot more sample data to accurately model data with an underlying Bayes linear decision boundary. The flexibility of the QDA can result in overfitting to the training data if there is not a large enough sample size. The LDA could produce a better test prediction with less data.
+<br />
+
+### **Question 6 Chapter 4**
+
+*Part (a)*
+
+ $P(Y) = \frac{exp(-6 + 0.05*40 + 1*3.5)}{[1 + exp(-6 + 0.05*40 + 1*3.5)]}$
+ $P(Y) = \frac{e^{-0.5}}{(1 + e^{-0.5})} = 0.378$
+
+A student with an undergraduate GPA of 3.5 who studied 40 hours would have a 37.8% chance of getting an A in the statistics course.
+
+*Part (b)*
+
+$$0.5 = \frac{exp(-6 + 0.05*X1 + 1*3.5)}{[1 + exp(-6 + 0.05*X1 + 1*3.5)]} $$
+$$0.5 = \frac{exp(-2.5 + 0.05*X1)}{[1 + exp(-2.5 + 0.05*X1)]}$$
+$$0.5*[1 + exp(-2.5 + 0.05*X1)]=exp(-2.5 + 0.05*X1)$$
+$$0.5 + 0.5*exp(-2.5 + 0.05*X1)=exp(-2.5 + 0.05*X1)$$
+$$0.5 = 0.5*exp(-2.5 + 0.05*X1)$$
+$$1 = exp(-2.5 + 0.05*X1)$$
+$$ln(1) = -2.5 + 0.05*X1$$
+$$2.5 = 0.05*X1$$
+$$X1 = 50$$
+
+A student with an undergraduate GPA of 3.5 would need to study 50 hours to have a 50% probability of getting an A in the statistics course.  
+
+
+### **Question 5: Ex. 10 (Chapter 4, page 171)**
+
+Weekly percentage returns for the S&P 500 stock index between 1990 and 2010
+
+### **Part a:** 
+
+
+```{r EX.10.a1}
+library(ISLR)
+weekly <- data.frame(Weekly)
+#?Weekly
+names(weekly)
+# summary(Weekly)
+
+pairs(weekly,col = "dark blue")
+```
+The following plot shows the correlation between numeric features. As it is shown, *Year* and *Volume* are highly positively correlated.
+```{r EX.10.a2}
+  library(dplyr)
+  x <- dplyr::select_if(Weekly, is.numeric)
+  dat2 <- x %>% mutate_each_(funs(scale(.) %>% as.vector),
+                               vars=c("Weekly$lag1","Weekly$lag2","Weekly$lag3","Weekly$lag4","Weekly$lag5"))
+  library("PerformanceAnalytics")
+  chart.Correlation(dat2, histogram=TRUE, pch=19)
+```
+<br />
+We also can show some other plots indicating meaningful relations between features in the Weekly data. Based on the plots in the pairs plot and the following scatter plot, it seems there is an inverse relation between *volume* and *Year*.
+```{r EX.10.a.3}
+plot(Weekly[,8],Weekly[,7], main="Average number of daily shares traded - Percentage return for this week", xlab="Today", ylab="Volume",col = "dark green", pch=19)
+plot(Weekly[,1],Weekly[,7], main="Average number of daily shares traded - Recording year", xlab="Year", ylab="Volume", col = "dark blue", pch=19)
+plot(Weekly[,3],Weekly[,2], main="Percentage return for 2 weeks previous - 1 week", xlab="Lag2", ylab="Lag1", col = "dark red", pch=19)
+```
+<br />
+### **Part b:** 
+We used the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Based on the summary of the fitted logistic model, P-value for the *intercept* and *lag2* is small and the standard deviation is large, which meand we can reject the null hypothesis, and the corrasponding coefficient obtained by logistic regression for intercept and *lag2* is not zero. Thus, there is a substantial association between these feature and the response (Direction). The logistic regression coefficients give the change in the log odds ratio of the outcome for a one unit increase in the predictor variable. For every one unit change in *lag1*, the log odds ration of direction decreases by 0.04127, but *lag1* is not statistically significant. Thus, it does not have any impact on the independant variable, *Direction*. For every one unit change in *lag2*, the log odds ration of direction increases by 0.05844.
+```{r EX.10.b1}
+Predictors<- data.frame(Weekly[,2:7],Weekly$Direction)
+
+mylogit <- glm(Weekly.Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume , data = Predictors, family = "binomial")
+
+# summary(mylogit)
+```
+In the diagnosis plot, the *residual vs fitted* plot is showing that 
+```{r EX.10.b1.1}
+par(mfrow=c(2,2))
+# plot(mylogit)
+Betacoeff = coef(mylogit)
+exp(coef(mylogit))
+```
+<br />
+The odds ratio and the confidence interval of each predictor as follows:
+```{r EX.10.b2}
+exp(cbind(OR = coef(mylogit), confint(mylogit)))
+```
+Another important information in the Summary of the model is "Residual deviance", and "AIC", AIC computes the Err. 
+<br />
+Confidance interval of the model is as follows:
+```{r EX.10.b3}
+  confint(mylogit)
+```
+The test statistic is distributed chi-squared with degrees of freedom equal to the differences in degrees of freedom between the current and the null model (i.e., the number of predictor variables in the model). To find the difference in deviance for the two models (i.e., the test statistic) we can use the command: Null deviance shows fitting a model with just an intercept (e.g. Nulll model).
+```{r EX.10.b4}
+  with(mylogit, null.deviance - deviance)
+```
+To find the difference in deviance for the two models (i.e., the test statistic) we can use the command:
+```{r EX.10.b5}
+  with(mylogit, null.deviance - deviance)
+```
+The number of degree of freedom in model is:
+```{r EX.10.b6}
+  with(mylogit, df.null - df.residual)
+```
+The P-value of the model can be obtained as follows:
+```{r EX.10.b7}
+  with(mylogit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE))
+```
+<br />
+
+
+### **Part c:**
+Confusion matrix shows how many of the labels are misclassified. As it is shown in the following, 430 of the labels are correctly assigned to "Down" while 557 of them are misclassified, and 54 of "Up" labels are predicted correctly while 48 of them are misclassified.
+```{r EX.10.c1}
+  predTrn=predict(mylogit, Predictors, type="response")
+  predTrn = ifelse(predTrn < .5, "Down", "Up")
+  table(pred = predTrn, true=Weekly$Direction)
+```
+The confusion matrix is shown as follows. Also this plot shows the predictions from the "predict" function and the color describes whether it was correct or not The explanation is that is seems like the logistic regression primarily guesses "UP" so there are more "Down" predictions wrong than up.
+```{r EX.10.c2}
+library(caret)
+
+  ## Here I use the predict function:
+  Prob = predict(mylogit,type = "response")
+  ProbFactor = rep("Up",1089)   #initialize the vector or Up/Down
+  ProbFactor[Prob<0.5] = "Down" #change the prediction accordingly
+  ProbFactor = factor(ProbFactor)
+  
+  ## Here is the part for the figure:
+  tab<-table(ProbFactor,Weekly$Direction) #Need a table
+  cm<-confusionMatrix(ProbFactor,Weekly$Direction) #Construct the confusion matrix
+  cm$table #This prints the table
+  fourfoldplot(cm$table) 
+```
+The method yields preferrentially the "Up" prediction, which can be shown by plotting the correct predictions for the "Down" class. The figure below provides a qualitative analysis of the higher number of wrong "Down" predictions (red) than the correct ones.
+
+```{r EX.10.c2.1Plot}
+  plot(Prob, col = ifelse(Weekly$Direction == "Down", "blue","red"), pch = 18, 
+     main="True predictions for down (blue), red otherwise")
+  correctPredictionslogReg <-sum(diag(tab))/sum(tab)
+  incorrectPredictionslogReg <-(tab[1,2]+tab[2,1])/sum(tab)
+```
+<br />
+
+
+## **Part d:**
+In the following we again fit the logistic regression model with only one predictor *(log2)* and  same training data but only for years from 1990 to 2008 rather than part a,b from 2009 and 2010.
+```{r EX.10.d0}
+  Predictors$Year = Weekly$Year
+  PredYearTrunc_train <- Predictors[Predictors$Year<= 2008,]
+  PredYearTrunc_test <- Predictors[Predictors$Year> 2008,]
+  mylogit2 <- glm(Weekly.Direction ~ Lag2, data = PredYearTrunc_train, family = "binomial")
+  # summary(mylogit2)
+```
+One of the errors that we can report for this cathegorical classification type modelings is confusion matrix. The confusion matrix has the number of correct predictions for each class on its diagonal and its offdiagonal values are the misclassifications for every corresponding class. Confusion matrix for truncated years (1990-2008) of both train and test sets are as follows:
+
+<br />
+```{r EX.10.d1}
+  library(lattice)
+  library(ggplot2)
+  library(caret) 
+  ## Confusion matrix for truncated years ::: Train set
+  predTrn2 = predict(mylogit2, PredYearTrunc_train, type="response")
+  predTrn2 = ifelse(predTrn2 < .5, "Down", "Up")
+  a <- table(pred = predTrn2, true=PredYearTrunc_train$Weekly.Direction)
+  print(a)
+  MisclassfyLogit_Train = a[1,2]+a[2,1]; print(MisclassfyLogit_Train)
+  confusionMatrix(a)
+  
+  ## Confusion matrix for truncated years ::: Test set
+  predTest2 = predict(mylogit2, PredYearTrunc_test, type="response")
+  predTest2 = ifelse(predTest2 < .5, "Down", "Up")
+  b <- table(pred = predTest2, true=PredYearTrunc_test$Weekly.Direction)
+  print(b)
+  MisclassfyLogit_Test = b[1,2]+b[2,1]; print(MisclassfyLogit_Test)
+  confusionMatrix(b)
+```
+
+Now:
+
+```{r EX.10.d1.2}
+  # par(mfrow=c(2,2))
+  # plot(mylogit2)
+  plot( Weekly[,9],Weekly[,3],xlab = "Direction", ylab="lag2",col="cyan")
+```
+
+Log2 and intercept are both statistically significant, there is a substantial association between predictor, log2 and Direction in the Weekly data set. 
+
+
+## **Part e:**
+In this part, we fit LDA (linear discriminate analysis) model to the same data in the part *d*. Then we will compare the confusion matrix of the test and train set for the LDA model with having *lag 2* as the only feature and *Direction* as the response.
+
+```{r EX.10.e1}
+  library(MASS)
+  myLDA <- lda(Weekly.Direction~Lag2, data= PredYearTrunc_train)
+  print(myLDA)
+  ## confidance interval for LDA
+  confint(mylogit)
+  coef(myLDA)
+```
+The confusion matrix for train and test set in LDA is as follows:
+```{r EX.10.e2}
+  ## Confusion matrix for truncated years ::: Train set
+  predTrn2 = predict(myLDA, PredYearTrunc_train, type="response")$class
+  a <- table(pred = predTrn2, true=PredYearTrunc_train$Weekly.Direction)
+  print(a)
+  confusionMatrix(a)
+  MisclassfyLDA_Train = a[1,2]+a[2,1]; print(MisclassfyLDA_Train)
+  
+  ## Confusion matrix for truncated years ::: Test set
+  predTest2 = predict(myLDA, PredYearTrunc_test, type="response")$class
+  b <- table(pred = predTest2, true=PredYearTrunc_test$Weekly.Direction)
+  print(b)
+  MisclassfyLDA_Test = b[1,2]+b[2,1]; print(MisclassfyLDA_Test)
+```
+
+```{r EX.10.e3}
+  # LDA: 
+  #Get LDA prediction
+  ldaPred = predict(myLDA, type="response", newdata=PredYearTrunc_test)
+  ldaClass = ldaPred$class
+  #Confusion Mx
+  tab<-table(ldaClass,PredYearTrunc_test$Weekly.Direction)
+  cm<-confusionMatrix(ldaClass,PredYearTrunc_test$Weekly.Direction)
+  cm$table
+  fourfoldplot(cm$table)
+  #Correct predictions LDA:
+  correctPredictionsLDA <-sum(diag(tab))/sum(tab)
+  incorrectPredictionsLDA <-(tab[1,2]+tab[2,1])/sum(tab)
+```
+
+
+### **Part f:**
+We fit the QDA (Quadratic discriminate analysis) on the same data as part *(d, e)*:
+```{r EX.10.f1}
+  myQDA <- qda(Weekly.Direction ~ Lag2, data = PredYearTrunc_train)
+  print(myQDA)
+  confint(mylogit)
+  coef(myLDA)
+```
+We also show the decision boundaries (parabolas) of QDA by projecting the data points into 2D. In the following plot correct predictions for *Direction* (response) including *Up, Down* is showing by blue, and wrong predictions are shown by red color. In addition, the nonlinear (quadratic) decision boundaries are shown in magnet and cyan colors.
+```{r EX.10.e2.1}
+  library(klaR)
+  partimat(PredYearTrunc_train$Weekly.Direction ~ ., data = PredYearTrunc_train, method = "qda", plot.matrix = TRUE, col.correct='blue', col.wrong='red')
+```
+<br />
+QDA misclassification error:
+```{r EX.10.f2}
+    ## Confusion matrix for truncated years ::: Train set
+  predTrn2 = predict(myQDA, PredYearTrunc_train, type="response")$class
+  a <- table(pred = predTrn2, true=PredYearTrunc_train$Weekly.Direction)
+  print(a)
+  confusionMatrix(a)
+  MisclassfyQDA_Train = a[1,2]+a[2,1]; print(MisclassfyQDA_Train)
+  
+  ## Confusion matrix for truncated years ::: Test set
+  predTest2 = predict(myQDA, PredYearTrunc_test, type="response")$class
+  b <- table(pred = predTest2, true=PredYearTrunc_test$Weekly.Direction)
+  print(b)
+  MisclassfyQDA_Test = b[1,2]+b[2,1]; print(MisclassfyQDA_Test)
+```
+
+```{r EX.10.f3}
+  # QDA
+  #Get QDA prediction
+  qdaPred = predict(myQDA, type="response", newdata = PredYearTrunc_test)
+  qdaFit = qdaPred$class
+  #Confusion Mx QDA
+  tab<-table(qdaFit,PredYearTrunc_test$Weekly.Direction)
+  cm<-confusionMatrix(qdaFit,PredYearTrunc_test$Weekly.Direction)
+  cm$table
+  fourfoldplot(cm$table, main = "QDA")
+  #Correct predictions QDA:
+  correctPredictionsQDA <-sum(diag(tab))/sum(tab)
+  print(correctPredictionsQDA)
+  incorrectPredictionsQDA <-(tab[1,2]+tab[2,1])/sum(tab)
+  print(incorrectPredictionsQDA)
+```
+
+
+### **Part g:**
+We fit the KNN with K=1 (K nearest neighbors) on the same data as part *(d, e, f)*:
+```{r EX.10.g1}
+  library("class")
+  library(caret) 
+
+  obs <- nrow(PredYearTrunc_train)
+  obsTest <- nrow(PredYearTrunc_test)
+  
+  test.myKNN <- knn(train=PredYearTrunc_train[1:6], test=PredYearTrunc_test[1:6],       PredYearTrunc_train$Weekly.Direction, k=1)
+  # train.error <- sum(train.myKNN != PredYearTrunc_train$Weekly.Direction)/obs
+  # print(train.error)
+  
+  a <- table(test.myKNN, PredYearTrunc_test$Weekly.Direction)
+  
+  print(a)
+  cm<-confusionMatrix(test.myKNN,PredYearTrunc_test$Weekly.Direction)
+  fourfoldplot(cm$table,main = "KNN")
+  correctPredictionsKNN <-sum(diag(a))/sum(a)
+  incorrectPredictionsKNN <-(a[1,2]+a[2,1])/sum(a)
+  Misclassfytest.myKNN = a[1,2]+a[2,1]; print(Misclassfytest.myKNN)
+```
+KNN misclassification error is as follows:
+```{r EX.10.g2}
+  train.myKNN <- knn(train=PredYearTrunc_train[1:6], test=PredYearTrunc_train[1:6],  PredYearTrunc_train$Weekly.Direction, k=1)
+  
+  a <- table(train.myKNN, PredYearTrunc_train$Weekly.Direction)
+  print(a)
+  confusionMatrix(train.myKNN,PredYearTrunc_train$Weekly.Direction)
+  Misclassfytrain.myKNN = a[1,2]+a[2,1]; print(Misclassfytrain.myKNN)
+```
+
+
+### **Part h:** 
+Based on the plots in the last part, part *i*, logistic regression and LDA have less misclassification errors than QDA and KNN.
+```{r EX.10.h}
+  TrainMissClassification = c(MisclassfyLogit_Train,MisclassfyLDA_Train,MisclassfyQDA_Train,Misclassfytrain.myKNN)
+print(TrainMissClassification)
+  TestMissClassification = c(MisclassfyLogit_Test,MisclassfyLDA_Test,MisclassfyQDA_Test,Misclassfytest.myKNN)
+  print(TestMissClassification)
+```
+While all classification algorithms used preferrentially estimated "Up" as prediction, QDA and KNN performed the worst, with QDA yielding only "Up" predictions.
+```{r allPredictionsTable, echo = FALSE}
+library(kableExtra)
+library(jtools)
+Predictions<-data.frame(rbind(cbind(correctPredictionsKNN,correctPredictionsQDA,correctPredictionsLDA,correctPredictionslogReg),
+cbind(incorrectPredictionsKNN,incorrectPredictionsQDA,incorrectPredictionsLDA,incorrectPredictionslogReg)))
+colnames(Predictions)<-c("KNN","QDA","LDA","logReg")
+rownames(Predictions)<-c("%Correct","%Incorrect")
+"signif"(Predictions, digits = 3)
+```
+
+
+### **Part i:** 
+This plots show the train and test error (misclassification error) of each model including logistic regression, LDA, QDA and KNN. The QDA and KNN have more incorrect number of predictions. It is possible also to report the same plot by percentage of corect or incorect predictions, but since all models are fitted to a same data set, pure number of misclasified labels is meaningful too.
+```{r EX.10.I}
+  plot(1:length(TrainMissClassification),TrainMissClassification, type = 'p', col="dark cyan", pch=17, axes=F)
+  lines(1:length(TrainMissClassification),TrainMissClassification,col="green")
+  points(1:length(TestMissClassification),TestMissClassification, type = 'p', col="dark red", pch=17)
+  lines(1:length(TestMissClassification),TestMissClassification,col="red")
+  box(lty = 'solid', col = 'black')
+  title(main = "Test - Train misclassification error for different models")
+  legend(3.2, 560, legend=c("Train error", "Test error"), col=c("green", "red"), lty="solid", cex=1)
+  axis(1, at=1:4, labels = c('Logistic regression','LDA','QDA','KNN'), las=2)
+  axis(2)
+  
+  plot(1:length(TestMissClassification),TestMissClassification, type = 'p', col="dark blue", pch=17,axes=F)
+  lines(1:length(TestMissClassification),TestMissClassification,col="blue")
+  box(lty = 'solid', col = 'black')
+  title(main = "Test misclassification error for different models")
+  axis(1, at=1:4, labels = c('Logistic regression','LDA','QDA','KNN'), las=2)
+  axis(2)
+```
+
